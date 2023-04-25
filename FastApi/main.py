@@ -7,6 +7,7 @@ from fastapi import Depends, FastAPI, HTTPException, status
 from user_auth import AuthHandler
 from database_util import database_methods
 
+
 app = FastAPI()
 auth_handler = AuthHandler()
 db_method=database_methods()
@@ -18,6 +19,15 @@ class UserData(BaseModel):
     password: str
     restaurant_name: Optional[str]
     user_tier: Optional[str] = 'free'
+
+class Pinecone_Query(BaseModel):
+    query:str
+    restaurant_id:str
+    
+class GPT_Query(BaseModel):
+    query:str
+    prompt:str
+    
     
 @app.post('/register', status_code=status.HTTP_201_CREATED)
 async def register(auth_details: UserData):
@@ -61,3 +71,11 @@ async def login(auth_details: UserData):
 @app.get('/get_restaurant_id',status_code=status.HTTP_200_OK)
 def get_restaurant_id(username=Depends(auth_handler.auth_wrapper)):
     return db_method.fetch_user(username)[8]
+
+@app.get('/query_pinecone',status_code=status.HTTP_200_OK)
+def query_pinecone(pinecone_query:Pinecone_Query,username=Depends(auth_handler.auth_wrapper)):
+    return db_method.query_pinecone(pinecone_query.query,pinecone_query.restaurant_id)
+
+@app.get('/query_gpt',status_code=status.HTTP_200_OK)
+def query_gpt(gpt_query:GPT_Query,username=Depends(auth_handler.auth_wrapper)):
+    return db_method.chat_gpt(gpt_query.query,gpt_query.prompt)

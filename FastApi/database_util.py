@@ -3,6 +3,8 @@ import datetime
 import pymysql
 import os
 load_dotenv()
+import pinecone
+import openai
 
 class database_methods():
     
@@ -129,3 +131,40 @@ class database_methods():
             print("update_password: "+str(e))
             return "update_failed"
         
+    def pinecone_init(self):
+        index_name = os.getenv('pinecone_index_name')
+
+        # initialize connection to pinecone (get API key at app.pinecone.io)
+        pinecone.init(
+            api_key=os.getenv('pinecone_api_key'),
+            environment=os.getenv('pinecone_environment') # find next to api key in console
+        )
+        # check if 'openai' index already exists (only create index if not)
+        if index_name not in pinecone.list_indexes():
+            pinecone.create_index(index_name, dimension=len(embeds[0]))
+        # connect to index
+        index = pinecone.Index(index_name)
+        return index
+    
+    def query_pinecone(self,query,resturant_id):
+        index=self.pinecone_init()
+        openai.api_key = os.getenv('open_api_key')
+        MODEL=os.getenv('Embedding_Model')
+        xq = openai.Embedding.create(input=query, engine=MODEL)['data'][0]['embedding']
+        res = index.query([xq], top_k=20, include_metadata=True,namespace=resturant_id)
+        #return res['matches']
+        reviews=[]
+        for match in res['matches']:
+            reviews.append(f"{match['score']:.2f}: {match['metadata']['text']}")
+        return reviews
+    
+    def chat_gpt(self,query,prompt):
+        openai.api_key = os.getenv('open_api_key')
+        response_summary =  openai.ChatCompletion.create(
+            model = "gpt-3.5-turbo", 
+            messages = [
+                {"role" : "user", "content" : f'{query} {prompt}'}
+            ],
+            temperature=0
+        )
+        return response_summary['choices'][0]['message']['content']
