@@ -99,6 +99,7 @@ class database_methods():
             if len(rows)==0:
                 return "no_user_found"
             else:
+                print(rows[0])
                 return rows[0]
         except Exception as e:
             return 'Exception'   
@@ -128,14 +129,3 @@ class database_methods():
             print("update_password: "+str(e))
             return "update_failed"
         
-    def get_id(self,username):
-        try:
-            conn,cursor=self.connect_db()
-            query = f"UPDATE user_data SET password = '{password}' WHERE username = '{username}'"
-            cursor.execute(query)
-            conn.commit()
-            conn.close()
-            return "password_updated"
-        except Exception as e:
-            print("update_password: "+str(e))
-            return "update_failed"

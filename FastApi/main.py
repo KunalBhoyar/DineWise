@@ -58,3 +58,6 @@ async def login(auth_details: UserData):
     #Can add logs
     return { 'token': token }
 
+@app.get('/get_restaurant_id',status_code=status.HTTP_200_OK)
+def get_restaurant_id(username=Depends(auth_handler.auth_wrapper)):
+    return db_method.fetch_user(username)[8]
