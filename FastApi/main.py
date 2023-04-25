@@ -28,6 +28,10 @@ class GPT_Query(BaseModel):
     query:str
     prompt:str
     
+  
+@app.get('/healthz',status_code=status.HTTP_200_OK)
+def healthz():
+    return {"Server": "Running"}  
     
 @app.post('/register', status_code=status.HTTP_201_CREATED)
 async def register(auth_details: UserData):
