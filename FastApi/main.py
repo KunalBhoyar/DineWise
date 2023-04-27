@@ -6,12 +6,13 @@ from typing import Union
 from fastapi import Depends, FastAPI, HTTPException, status
 from user_auth import AuthHandler
 from database_util import database_methods
+from logging_util import logging_function
 
 
 app = FastAPI()
 auth_handler = AuthHandler()
 db_method=database_methods()
-
+loging_method=logging_function()
 
 ##Class for user data to login and register
 class UserData(BaseModel):
@@ -28,7 +29,17 @@ class GPT_Query(BaseModel):
     query:str
     prompt:str
     
+class Logging(BaseModel):
+    msg:str
   
+##Class for query the cloudwatch datalog
+class Log_Query(BaseModel):
+    code:int
+    filter_range:Optional[str]='last_hour'
+    username:Optional[str]='admin',
+    api_name: Optional[str] = None
+    
+    
 @app.get('/healthz',status_code=status.HTTP_200_OK)
 def healthz():
     return {"Server": "Running"}  
@@ -78,8 +89,38 @@ def get_restaurant_id(username=Depends(auth_handler.auth_wrapper)):
 
 @app.get('/query_pinecone',status_code=status.HTTP_200_OK)
 def query_pinecone(pinecone_query:Pinecone_Query,username=Depends(auth_handler.auth_wrapper)):
-    return db_method.query_pinecone(pinecone_query.query,pinecone_query.restaurant_id)
+    eligible_status=db_method.check_if_eligible(username)
+    if eligible_status:
+        loging_method.create_AWS_logs(f"User = {username} for backend, API = query_pinecone , Status= 200_Ok")
+        return db_method.query_pinecone(pinecone_query.query,pinecone_query.restaurant_id)
+    else:
+        loging_method.create_AWS_logs(f"User = {username} for backend, API = query_pinecone , Status= 429_TOO_MANY_REQUESTS")
+        return {"limit":"exceeded"}
 
 @app.get('/query_gpt',status_code=status.HTTP_200_OK)
 def query_gpt(gpt_query:GPT_Query,username=Depends(auth_handler.auth_wrapper)):
-    return db_method.chat_gpt(gpt_query.query,gpt_query.prompt)
+    eligible_status=db_method.check_if_eligible(username)
+    if eligible_status:
+        loging_method.create_AWS_logs(f"User = {username} for backend, API = query_gpt , Status= 200_Ok")
+        return db_method.chat_gpt(gpt_query.query,gpt_query.prompt)
+    else:
+        loging_method.create_AWS_logs(f"User = {username} for backend, API = query_gpt , Status= 429_TOO_MANY_REQUESTS")
+        return {"limit":"exceeded"}
+
+@app.post('/app_logging',status_code=status.HTTP_200_OK)
+def logging(logging:Logging,username=Depends(auth_handler.auth_wrapper)):
+    loging_method.create_AWS_logs(f"User = Streamlit for frontend, API = logging_cloudwatch Msg: {logging.msg}")
+    
+    
+@app.get('/get_log_count')
+def get_log_count(log_query:Log_Query,username=Depends(auth_handler.auth_wrapper)):
+    status=f"Status= "+str(log_query.code)
+    return_logs=loging_method.read_cloudwatch_logs(status, log_query.username, log_query.filter_range, log_query.api_name)
+    return len(return_logs)
+
+
+## log name - fixed only 1 log no need to pass
+## status = 2 for success or 4 for failure in int
+## username = username of the user  or admin for all users 
+## filter_range == last_hour, last_day , last_week, last_month
+## api name = query_pinecone or query_gpt. Only 2 apis.

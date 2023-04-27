@@ -24,30 +24,31 @@ class database_methods():
     ## Function to check if the user is still eligible to make api calls 
     def check_if_eligible(self,username):
         try:
-            print(username[0]['username'])
-            if username[0]['username'] == "admin":
+            print(username)
+            if username == "admin":
                 return True
             else:
-                _,cursor_user=self.create_connection('USER_DATA')
-                query=f"select current_count,tier,last_request_time from USER where username='{username}'"
-                cursor_user.execute(query)
-                rows = cursor_user.fetchall()
-                response=self.return_json(rows,cursor_user)[0]
-                if response['last_request_time'] == None:
-                    response['last_request_time']=datetime.datetime.now()
+                _,cursor=self.connect_db()
+                query="SELECT * FROM user_data WHERE username='{}'".format(username)
+                cursor.execute(query)
+                rows = cursor.fetchall()
+                rows=rows[0]
+                if rows[6] == None:
+                    last_request_time=datetime.datetime.now()
                     self.update_last_req_time(username,datetime.datetime.now())
                     self.update_count_for_user(username,0)
-                last_request_time = datetime.datetime.strptime(response['last_request_time'], '%Y-%m-%d %H:%M:%S.%f')
+                elif rows[6] != None:
+                    last_request_time = datetime.datetime.strptime(str(rows[6]), '%Y-%m-%d %H:%M:%S')
                 time_elapsed=datetime.datetime.now() - last_request_time
                 if time_elapsed > datetime.timedelta(hours=1):
                     self.update_count_for_user(username,1)
                     return True
                 elif time_elapsed < datetime.timedelta(hours=1):
-                    allowed_count=self.get_allowed_count(response['tier'])
-                    if response['current_count'] == allowed_count:
+                    allowed_count=self.get_allowed_count(rows[5])
+                    if rows[7] == allowed_count:
                         return False
-                    elif int(response['current_count']) < allowed_count:
-                        self.update_count_for_user(username,response['current_count']+1)
+                    elif int(rows[7]) < allowed_count:
+                        self.update_count_for_user(username,rows[7]+1)
                         return True
         except Exception as e:
             print("check_if_eligible: "+str(e))
@@ -56,9 +57,9 @@ class database_methods():
     ## Function to update the last request time for the user
     def update_last_req_time(self,username,timestamp):
         try:
-            conn,cursor_user=self.create_connection('USER_DATA')
-            query=f"UPDATE USER SET last_request_time = '{timestamp}' where username='{username}'"
-            cursor_user.execute(query)
+            conn,cursor=self.connect_db()
+            query=f"UPDATE user_data SET user_last_request = '{timestamp}' where username='{username}'"
+            cursor.execute(query)
             conn.commit()
             conn.close()
         except Exception as e:
@@ -68,22 +69,23 @@ class database_methods():
     ## Function to update the count of api calls for the user
     def update_count_for_user(self,username,count):
         try:
-            conn,cursor_user=self.create_connection('USER_DATA')
-            query=f"UPDATE USER SET current_count = {count} where username='{username}'"
-            cursor_user.execute(query)
+            conn,cursor=self.connect_db()
+            query = f"UPDATE user_data SET user_request_count = '{count}' WHERE username = '{username}'"
+            cursor.execute(query)
             conn.commit()
             conn.close()
+            return "password_updated"
         except Exception as e:
             print("update_count_for_user: "+str(e))
             return "failed_insert" 
         
     def get_allowed_count(self, tier):
             if tier == 'free':
-                return 10
+                return 5
             if tier == 'gold':
-                return 15
+                return 10
             if tier == 'platinum':
-                return 20
+                return 15
     def generate_id(self):
         import random
         import string
