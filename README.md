@@ -49,6 +49,51 @@ The source of data for this project we used is Yelp's API (Application Programmi
 6. Build a web application using streamlit for showcasing the results.
 
 
+# Project overall Architecture
+
+Project Architecture Diagram and technologies used
+
+
+Project Requirements and Technology dependencies
+
+### Requirements and dependencies
+
+```
+
+fastapi==0.95.1
+frozenlist==1.3.3
+gitdb==4.0.10
+GitPython==3.1.31
+🐍 Python ➡ 3.9.7
+altair==4.1.0
+📊 matplotlib==3.5.0
+🔢 numpy==1.19.5
+google-api-core==2.11.0
+google-auth==2.17.3
+google-auth-oauthlib==1.0.0
+google-cloud==0.34.0
+google-cloud-core==2.3.2
+google-cloud-storage==2.8.0
+google-crc32c==1.5.0
+google-resumable-media==2.5.0
+googleapis-common-protos==1.59.0
+streamlit==1.21.0
+toml==0.10.2
+watchfiles==0.19.0
+uvicorn==0.21.1
+uvloop==0.17.0
+validators==0.20.0
+watchfiles==0.19.0
+wcwidth==0.2.6
+websockets==11.0.2
+yarl==1.9.1
+zipp==3.15.0
+```
+
+
+
+
+
 
 
 
