@@ -12,14 +12,10 @@
 ![](https://img.shields.io/badge/GitHub_Actions-2088FF?style=for-the-badge&logo=github-actions&logoColor=white)
 ![](https://img.shields.io/badge/Streamlit-FF4B4B?style=for-the-badge&logo=Streamlit&logoColor=white)
 
-# Code Labs Documentation
-
-[Access the codelabs document here]() 🚀
 
 
-# Application Link
 
-[Access the Application link here]() 🚀
+
 
 
 # Overview 📝
