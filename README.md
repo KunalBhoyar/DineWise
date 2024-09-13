@@ -1,4 +1,4 @@
-# Final_Project
+# DineWise
 
 
 ![0_s0_g_f0OUuc1blVC](https://user-images.githubusercontent.com/114544202/235055460-06eb1bc9-4a2d-4d49-96e5-e0caeae8f6fb.jpg)
